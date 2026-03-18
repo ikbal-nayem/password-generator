@@ -84,7 +84,7 @@ def add_common_variations(base_set, word, max_items):
     # Build suffixes dynamically based on current year
     year_suffixes = [str(y) for y in range(CURRENT_YEAR - 2, CURRENT_YEAR + 3)]
     suffixes = ["", "123", "1234", "1", "2", "007", "@", "#", "!", "bd", "BD",
-                "2020", "2021", "2022", "99", "100", "007bd", "123bd", "!@#", "pass", "wifi", "net"] + year_suffixes
+                "99", "100", "007", "123", "!@#", "pass", "wifi", "net"] + year_suffixes
     prefixes = ["", "@", "#", "!", "123", "bd"]
 
     # Original word (only if length >= 8)
