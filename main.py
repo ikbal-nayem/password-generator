@@ -12,30 +12,66 @@ import string
 from datetime import datetime
 
 # ------------------- Common Bangladeshi Data (without first names) -------------------
+# Get current year for dynamic year-based password generation
+CURRENT_YEAR = datetime.now().year
+
+# Year range for password variations (current year ± 5 years forward, ± 3 years backward)
+YEARS = [str(y) for y in range(CURRENT_YEAR - 3, CURRENT_YEAR + 6)]
+
+# Major cities, districts, and popular places
 PLACES = [
     "Dhaka", "Chittagong", "Khulna", "Rajshahi", "Sylhet", "Barisal", "Rangpur",
     "Mymensingh", "Comilla", "Narayanganj", "Gazipur", "Jessore", "Bogra", "Dinajpur",
-    "Pabna", "Tangail", "Faridpur", "Noakhali", "Chandpur", "Coxsbazar", "Brahmanbaria"
+    "Pabna", "Tangail", "Faridpur", "Noakhali", "Chandpur", "Coxsbazar", "Brahmanbaria",
+    "Sherpur", "Jashore", "Jhalokati", "Madaripur", "Manikganj", "Narail", "Shariatpur",
+    "Habiganj", "Moulvibazar", "Sunamganj", "Kushtia", "Meherpur", "Chuadanga",
+    "Pirganj", "Natore", "Panchagarh", "Thakurgaon"
 ]
 
+# Bengali words, cultural terms, and common Bangladeshi references
 COMMON_WORDS = [
-    "love", "baby", "hello", "bangla", "desh", "football", "cricket", "tiger",
-    "royal", "gold", "silver", "super", "master", "king", "queen", "star",
-    "sun", "moon", "sky", "fire", "water", "happy", "smile", "friend"
+    # Universal common words
+    "love", "baby", "hello", "welcome", "friend", "family", "happy", "smile","friend",
+    # Bangladeshi/Bengali words
+    "bangla", "desh", "bangladesh", "dhakacity", "rickshaw", "paribari",
+    # Cultural/Islamic references
+    "bismillah", "islam", "ummah", "prarthana",
+    # Sports and entertainment
+    "football", "cricket", "tiger", "national", "shakib", "sehwag", "rohit",
+    # Nature and places
+    "padma", "meghna", "brhamputra", "sundarbans", "teesta", "karnafuli",
+    # Colors and materials
+    "gold", "silver", "green", "orange", "red", "blue", "pink",
+    # Animals - culturally significant
+    "tiger", "eagle", "lion", "cobra", "elephant", "peacock", "deer",
+    # Positive attributes
+    "super", "master", "king", "queen", "prince", "star", "power", "strong",
+    # Nature elements
+    "sun", "moon", "sky", "fire", "water", "storm", "wind", "earth",
+    # Food/Culture
+    "rice", "biryani", "puri", "chai", "mango", "hilsa", "roti",
+    # Traditional terms
+    "zamindar", "jagirdar", "mansab"
 ]
 
-# Default passwords with length >= 8
+# Default passwords - common patterns Bangladeshi users try (min length >= 8)
 DEFAULT_PASS = [p for p in [
     "12345678", "password", "123456789", "1234567890", "qwertyui", "abc12345",
     "11111111", "12312312", "admin123", "letmein1", "monkey12", "iloveyou",
-    "banglades", "dhaka1234", "bismillah", "password1", "123456789", "00000000"
+    "banglades", "dhaka1234", "bismillah", "password1", "123456789", "00000000",
+    "password123", "welcome12", "admin1234", "user12345", "guest12345", "test12345",
+    "bangladesh", "bangladesx", "dhakacity", "router123", "wifipass1", "networkpass",
+    "asdfghjk", "1qaz2wsx", "qwerty123", "123qwerty", "password12", "12345qwerty"
 ] if len(p) >= 8]
 
+# Bangladeshi mobile operator prefixes (Grameenphone, Robi, Airtel, Banglalink, etc.)
 MOBILE_PREFIXES = ["017", "018", "019", "016", "015", "013", "014"]
-YEARS = [str(y) for y in range(datetime.now().year - 2, datetime.now().year + 1)]
 
-# Leet substitutions (optional)
-LEET_MAP = {'a':'4', 'e':'3', 'i':'1', 'o':'0', 's':'5', 't':'7'}
+# Additional common numeric suffixes (dynamically includes recent years)
+NUMERIC_SUFFIXES = ["0000", "1111", "2222", "9999"] + YEARS
+
+# Leet substitutions for increased coverage
+LEET_MAP = {'a':'4', 'e':'3', 'i':'1', 'o':'0', 's':'5', 't':'7', 'l':'1', 'b':'8', 'g':'9'}
 
 # ------------------- Helper functions -------------------
 def leetify(word):
@@ -45,12 +81,18 @@ def leetify(word):
 
 def add_common_variations(base_set, word, max_items):
     """Add word with suffixes, prefixes, and leet versions (min length 8) to base_set until limit."""
-    suffixes = ["", "123", "1234", "1", "2", "007", "@", "#", "!", "2023", "2024", "2025", "bd", "BD"]
-    prefixes = ["", "@", "#", "!"]
+    # Build suffixes dynamically based on current year
+    year_suffixes = [str(y) for y in range(CURRENT_YEAR - 2, CURRENT_YEAR + 3)]
+    suffixes = ["", "123", "1234", "1", "2", "007", "@", "#", "!", "bd", "BD",
+                "2020", "2021", "2022", "99", "100", "007bd", "123bd", "!@#", "pass", "wifi", "net"] + year_suffixes
+    prefixes = ["", "@", "#", "!", "123", "bd"]
 
     # Original word (only if length >= 8)
     if len(word) >= 8:
         base_set.add(word)
+        if len(base_set) >= max_items:
+            return
+        base_set.add(word.upper())
         if len(base_set) >= max_items:
             return
 
@@ -59,7 +101,7 @@ def add_common_variations(base_set, word, max_items):
         if p == "" and s == "":
             continue
         candidate = p + word + s
-        if len(candidate) >= 8:
+        if len(candidate) >= 8 and len(candidate) <= 64:  # Avoid extremely long passwords
             base_set.add(candidate)
             if len(base_set) >= max_items:
                 return
@@ -72,10 +114,24 @@ def add_common_variations(base_set, word, max_items):
             return
     for p, s in itertools.product(prefixes, suffixes):
         candidate = p + leet_word + s
-        if len(candidate) >= 8:
+        if len(candidate) >= 8 and len(candidate) <= 64:
             base_set.add(candidate)
             if len(base_set) >= max_items:
                 return
+
+    # Title case variations
+    title_word = word.capitalize()
+    if len(title_word) >= 8:
+        base_set.add(title_word)
+        if len(base_set) >= max_items:
+            return
+        year_suffixes = [str(y) for y in range(CURRENT_YEAR - 1, CURRENT_YEAR + 2)]
+        for s in ["123", "1234", "bd"] + year_suffixes:
+            candidate = title_word + s
+            if len(candidate) >= 8:
+                base_set.add(candidate)
+                if len(base_set) >= max_items:
+                    return
 
 def generate_ssid_variations(ssid, username, max_items):
     """Generate password candidates based on SSID and username (min length 8)."""
@@ -106,7 +162,7 @@ def generate_ssid_variations(ssid, username, max_items):
 
 # ------------------- Main generator -------------------
 def main():
-    parser = argparse.ArgumentParser(description="Generate a targeted WiFi password list (min 8 chars, no default first names).")
+    parser = argparse.ArgumentParser(description="Generate a targeted WiFi password list (min 8 chars) for Bangladeshi networks.")
     parser.add_argument("--ssid", required=True, help="WiFi SSID (network name)")
     parser.add_argument("--username", help="Optional username (e.g., owner's name)")
     parser.add_argument("--max", type=int, default=100000, help="Maximum number of passwords (default: 100000)")
@@ -116,58 +172,120 @@ def main():
     max_pass = args.max
     passwords = set()
 
-    # 1. SSID/Username specific variations
+    # 1. SSID/Username specific variations (highest priority)
     ssid_vars = generate_ssid_variations(args.ssid, args.username, max_pass)
     passwords.update(ssid_vars)
     if len(passwords) >= max_pass:
         passwords = list(passwords)[:max_pass]
         random.shuffle(passwords)
-        write_file(passwords, args.output)
+        with open(args.output, "w") as f:
+            for pwd in passwords:
+                f.write(pwd + "\n")
+        print(f"[+] Generated {len(passwords)} passwords (min length 8). Saved to {args.output}")
         return
 
-    # 2. Add common Bangladeshi default passwords (already filtered for length >=8)
+    # 2. Add common Bangladeshi default passwords
     for pwd in DEFAULT_PASS:
         passwords.add(pwd)
         if len(passwords) >= max_pass:
             break
 
-    # 3. Add places (with min-length enforcement)
+    # 3. Add places with variations (major password source)
     for place in PLACES:
         add_common_variations(passwords, place, max_pass)
         if len(passwords) >= max_pass:
             break
 
-    # 4. Add common words
+    # 4. Add common words with variations
     for word in COMMON_WORDS:
         add_common_variations(passwords, word, max_pass)
         if len(passwords) >= max_pass:
             break
 
-    # 5. Add mobile number patterns (always 11 digits, so >=8)
+    # 5. Add combinations of place + year (e.g., Dhaka2024)
     if len(passwords) < max_pass:
-        for _ in range(min(10000, max_pass - len(passwords))):
-            prefix = random.choice(MOBILE_PREFIXES)
-            num = ''.join(random.choices(string.digits, k=8))
-            passwords.add(prefix + num)
+        for place in PLACES[:10]:  # Top 10 places
+            for year in YEARS:
+                combo = place.lower() + year
+                if len(combo) >= 8:
+                    passwords.add(combo)
+                    passwords.add(place + year)
+                    if len(passwords) >= max_pass:
+                        break
             if len(passwords) >= max_pass:
                 break
 
-    # 6. Add years combined with words (ensuring total length >=8)
+    # 6. Add mobile number patterns (Bangladeshi format: 11 digits)
     if len(passwords) < max_pass:
-        year_combos = []
-        for year in YEARS:
-            year_combos.append("bangla" + year)      # e.g., bangla2024 (10 chars)
-            year_combos.append("dhaka" + year)       # dhaka2024 (9 chars)
-            # "ctg" + year is only 7 chars, skip
-        for combo in year_combos:
-            if len(combo) >= 8:
-                passwords.add(combo)
-                if len(passwords) >= max_pass:
-                    break
+        mobile_count = min(5000, max_pass - len(passwords))
+        for _ in range(mobile_count):
+            prefix = random.choice(MOBILE_PREFIXES)
+            num = ''.join(random.choices(string.digits, k=8))
+            mobile = prefix + num
+            passwords.add(mobile)
+            # Also try variations
+            passwords.add(mobile + "bd")
+            passwords.add(mobile + "123")
+            if len(passwords) >= max_pass:
+                break
 
-    # 7. Pad with random 8-digit numbers if still under limit
-    while len(passwords) < max_pass:
-        passwords.add(''.join(random.choices(string.digits, k=8)))
+    # 7. Add word + year combinations
+    if len(passwords) < max_pass:
+        sample_words = random.sample(COMMON_WORDS, min(10, len(COMMON_WORDS)))
+        for word in sample_words:
+            for year in YEARS:
+                combo = (word + year).lower()
+                if len(combo) >= 8 and len(combo) <= 64:
+                    passwords.add(combo)
+                    passwords.add(word.capitalize() + year)
+                    if len(passwords) >= max_pass:
+                        break
+            if len(passwords) >= max_pass:
+                break
+
+    # 8. Add numeric patterns (repetitions and ranges - very common)
+    if len(passwords) < max_pass:
+        # Build recent years dynamically
+        recent_years = [str(y) for y in range(CURRENT_YEAR - 3, CURRENT_YEAR + 1)]
+        digit_patterns = ["00000000", "11111111", "22222222", "33333333", "99999999",
+                          "10101010", "12121212"] + recent_years
+        for digits in digit_patterns:
+            if len(digits) >= 8:
+                passwords.add(digits)
+                for suffix in ["bd", "@", "#", "123"]:
+                    candidates = [
+                        digits + suffix,
+                        suffix + digits,
+                    ]
+                    for c in candidates:
+                        if len(c) >= 8 and len(c) <= 64:
+                            passwords.add(c)
+                    if len(passwords) >= max_pass:
+                        break
+            if len(passwords) >= max_pass:
+                break
+
+    # 9. Pad with random 8-character combinations if still under limit
+    if len(passwords) < max_pass:
+        random_count = max_pass - len(passwords)
+        for _ in range(random_count):
+            # Mix of digits, letters, and common patterns
+            choice_type = random.choice([1, 2, 3])
+            if choice_type == 1:
+                # Random 8 digits
+                passwords.add(''.join(random.choices(string.digits, k=8)))
+            elif choice_type == 2:
+                # Random letters + digits
+                pwd = ''.join(random.choices(string.ascii_lowercase, k=4)) + \
+                      ''.join(random.choices(string.digits, k=4))
+                random.shuffle(list(pwd))
+                passwords.add(pwd)
+            else:
+                # Word + random digit suffix
+                word = random.choice(COMMON_WORDS + PLACES)
+                pwd = word.lower()[:4] + ''.join(random.choices(string.digits, k=4))
+                if len(pwd) >= 8:
+                    passwords.add(pwd)
 
     # Shuffle and write
     passwords = list(passwords)
@@ -179,6 +297,7 @@ def main():
             f.write(pwd + "\n")
 
     print(f"[+] Generated {len(passwords)} passwords (min length 8). Saved to {args.output}")
+    print(f"[+] Password list includes: SSID variations, places, words, mobile numbers, year combos, and random patterns")
 
 if __name__ == "__main__":
     main()
